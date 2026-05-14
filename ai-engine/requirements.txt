@@ -1,0 +1,35 @@
+# AI Engine Dependencies for Addis Profit Finder
+# OCR, Image Processing, and Fuzzy Matching
+
+# FastAPI framework
+fastapi==0.106.0
+uvicorn[standard]==0.25.0
+python-multipart==0.0.6
+
+# Image processing
+opencv-python-headless==4.9.0.80
+pillow==10.1.0
+numpy==1.26.2
+
+# OCR
+pytesseract==0.3.10
+tesseract-ocr>=5.0.0
+
+# Fuzzy matching
+python-Levenshtein==0.23.0
+fuzzywuzzy==0.18.0
+RapidFuzz==3.6.1
+
+# Machine Learning (optional for advanced models)
+scikit-learn==1.3.2
+torch>=2.1.0
+transformers>=4.36.0
+
+# Utilities
+python-dotenv==1.0.0
+httpx==0.25.2
+aiofiles==23.2.1
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1

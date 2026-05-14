@@ -2,8 +2,6 @@
 # Compliant with Data Protection Proclamation 1321/2024
 # All data resides on local Fedora Linux server within Ethiopia
 
-version: '3.8'
-
 services:
   # PostgreSQL Database - Local Sovereign Data Store
   postgres:

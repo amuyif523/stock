@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
 
 // Placeholder pages - to be implemented in Phase 2
 const Dashboard = () => <div className="p-8"><h1 className="text-2xl font-bold">Dashboard | ዳሽቦርድ</h1></div>;

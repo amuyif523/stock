@@ -12,7 +12,7 @@ RUN apk add --no-cache vips-dev
 COPY apps/api/package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install --only=production && npm cache clean --force
 
 # Copy source code
 COPY apps/api/ ./

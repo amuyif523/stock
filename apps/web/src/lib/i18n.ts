@@ -1,9 +1,9 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-import enTranslation from './locales/en.json';
-import amTranslation from './locales/am.json';
-import omTranslation from './locales/om.json';
+import enTranslation from '../locales/en.json';
+import amTranslation from '../locales/am.json';
+import omTranslation from '../locales/om.json';
 
 // Per L10N spec: Default to Amharic for Clerks
 const storedLang = typeof window !== 'undefined' 

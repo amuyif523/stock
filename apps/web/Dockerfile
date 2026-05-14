@@ -5,10 +5,12 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY apps/web/package*.json ./
+# Copy package files from correct relative path (context is root)
+COPY package*.json ./
+COPY apps/web/package*.json ./apps/web/
 
-# Install dependencies
+# Install dependencies (use npm install for flexibility when lockfile missing)
+WORKDIR /app/apps/web
 RUN npm install && npm cache clean --force
 
 # Copy source code

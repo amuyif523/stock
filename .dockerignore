@@ -1,0 +1,42 @@
+# Dependencies (but keep lockfiles for reproducible builds)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build outputs
+dist
+build
+.next
+out
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Uploads (mounted as volume)
+uploads
+
+# AI Models (mounted as volume)
+ai-engine/models
+
+# Testing
+coverage
+.nyc_output
+
+# Prisma migrations (use with caution in production)
+prisma/migrations

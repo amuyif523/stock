@@ -8,11 +8,13 @@ WORKDIR /app
 # Install dependencies for sharp (image processing)
 RUN apk add --no-cache vips-dev
 
-# Copy package files
-COPY apps/api/package*.json ./
+# Copy package files from correct relative path (context is root)
+COPY package*.json ./
+COPY apps/api/package*.json ./apps/api/
 
-# Install dependencies
-RUN npm install --only=production && npm cache clean --force
+# Install dependencies (use npm install for flexibility when lockfile missing)
+WORKDIR /app/apps/api
+RUN npm install && npm cache clean --force
 
 # Copy source code
 COPY apps/api/ ./

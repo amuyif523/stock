@@ -1,58 +1,75 @@
 ```
 # Dependencies
 node_modules/
+venv/
+.venv/
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.env
-.env.local
-.env.*
+*.egg-info/
+.Python/
+.pytest_cache/
+.mypy_cache/
+.julia/
+zig-cache/
 
 # Build outputs
 dist/
 build/
 target/
+out/
+*.out
 coverage/
 htmlcov/
-*.egg-info/
+.nyc_output/
 
-# Editors
+# Compiled files
+*.pyc
+*.pyo
+*.pyd
+*.class
+*.o
+*.obj
+*.so
+*.dll
+*.exe
+*.a
+*.lib
+
+# Environment files
+.env
+.env.local
+*.env.*
+
+# Editor/IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
 *.tmp
-
-# Logs
 *.log
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Python specific
-*.py[cod]
-*$py.class
-*.so
-.Python
-install-sh
-Makefile
-config.log
-config.status
-.libs/
-.pytest_cache/
-.mypy_cache/
-
-# Node.js specific
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-node_modules/
-jspm_packages/
-typings/
-.nyc_output
-coverage/
-.nyc_output/
-istanbul/
+# Compressed files
+*.zip
+*.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
+*.rar
+*.zst
+*.lz4
+*.lzh
+*.cab
+*.arj
+*.rpm
+*.deb
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.tar.zst
 ```

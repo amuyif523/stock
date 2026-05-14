@@ -10,9 +10,10 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
     cmake \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better caching
+# Copy requirements first for better caching (context is root)
 COPY ai-engine/requirements.txt ./
 
 # Install Python dependencies

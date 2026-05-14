@@ -1,0 +1,222 @@
+# This is your Prisma schema file,
+# learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- CORE MODELS ---
+
+model Owner {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  business  Business?
+  createdAt DateTime @default(now())
+}
+
+model Business {
+  id           String   @id @default(uuid())
+  name         String
+  location     String?
+  ownerId      String   @unique
+  owner        Owner    @relation(fields: [ownerId], references: [id])
+  products     Product[]
+  staff        Staff[]
+  audits       Audit[]
+  tin          String?  // Tax Identification Number for MoR compliance
+}
+
+model Staff {
+  id            String   @id @default(uuid())
+  name          String
+  role          Role     @default(CLERK)
+  businessId    String
+  business      Business @relation(fields: [businessId], references: [id])
+
+  // FAYDA INTEGRATION (Proclamation 1321 Compliance)
+  faydaToken    String   @unique @map("fayda_token") // The encrypted persistent token from Fayda
+  isVerified    Boolean  @default(false)
+  photoUrl      String?  // For face-match verification during audits
+
+  sales         Sale[]
+  wasteLogs     WasteLog[]
+  createdAt     DateTime @default(now())
+
+  @@map("staff")
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  CLERK
+}
+
+// --- INVENTORY MODELS ---
+
+model Product {
+  id            String   @id @default(uuid())
+  sku           String?  @unique // Standardized via Fuzzy Match logic
+  name          String   // The "Merkato Name" (e.g., "iPhone 15 Blue")
+  nameAmharic   String?  // Amharic name for localization
+  nameOromoo    String?  // Afaan Oromoo name for localization
+  category      String?
+  unit          String   @default("pcs") // pcs, kg, m, etc.
+
+  // Pricing Strategy
+  masterPrice   Float    // The "Master Price" for the shop
+  costPrice     Float    // Buying price from supplier
+
+  businessId    String
+  business      Business @relation(fields: [businessId], references: [id])
+
+  stockHistory  StockHistory[]
+  supplies      Supply[]
+  sales         Sale[]
+  wasteLogs     WasteLog[]
+  aliases       ProductAlias[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Product Alias table for "Addis Taxonomy" - handles local slang mapping
+model ProductAlias {
+  id        String  @id @default(uuid())
+  alias     String  // Local slang term (e.g., "Aticero", "Zet 5")
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique(alias, productId)
+}
+
+model StockHistory {
+  id            String   @id @default(uuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  quantity      Float
+  snapshotDate  DateTime @default(now()) // Used as I_start for audits
+  
+  // Ethiopian Calendar fields for display purposes
+  ecYear        Int?
+  ecMonth       Int?
+  ecDay         Int?
+}
+
+// --- TRANSACTION MODELS (The Leakage Algorithm Inputs) ---
+
+model Sale {
+  id            String   @id @default(uuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  quantity      Float
+
+  // Price Leakage Tracking
+  unitPrice     Float    // The actual price sold (to compare vs Product.masterPrice)
+  totalPrice    Float
+
+  // MoR QR-Code Compliance Fields
+  invoiceNumber String   @unique
+  vatAmount     Float    @default(0)
+  totAmount     Float    @default(0)
+  qrCodeData    String?  @map("qr_code_data") // Encoded QR payload
+  isSyncedToMoR Boolean  @default(false) @map("is_synced_to_mor")
+
+  staffId       String
+  staff         Staff    @relation(fields: [staffId], references: [id])
+
+  date          DateTime @default(now())
+  
+  // Ethiopian Calendar fields for display
+  ecYear        Int?
+  ecMonth       Int?
+  ecDay         Int?
+
+  @@map("sale")
+}
+
+model Supply {
+  id            String   @id @default(uuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  quantity      Float
+  unitCost      Float
+  supplierName  String?
+  date          DateTime @default(now())
+  
+  // Ethiopian Calendar fields for display
+  ecYear        Int?
+  ecMonth       Int?
+  ecDay         Int?
+}
+
+model WasteLog {
+  id            String   @id @default(uuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  quantity      Float
+  reason        String?  // Damage, Expiry, Theft
+  staffId       String
+  staff         Staff    @relation(fields: [staffId], references: [id])
+  date          DateTime @default(now())
+  
+  // Ethiopian Calendar fields for display
+  ecYear        Int?
+  ecMonth       Int?
+  ecDay         Int?
+
+  @@map("waste_log")
+}
+
+// --- AUDIT & INTELLIGENCE ---
+
+model Audit {
+  id              String   @id @default(uuid())
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id])
+
+  startDate       DateTime
+  endDate         DateTime @default(now())
+
+  // The Algorithm Outputs
+  expectedStock   Float    @map("expected_stock")
+  physicalStock   Float    @map("physical_stock") // Entered via camera/manual check
+  leakageUnits    Float    @map("leakage_units") // Expected - Physical
+  leakageValueETB Float    @map("leakage_value_etb") // leakageUnits * Product.masterPrice
+  priceLeakageETB Float    @map("price_leakage_etb") // Sum of (MasterPrice - ActualPrice) for sales
+
+  severity        Severity @default(LOW)
+  isResolved      Boolean  @default(false) @map("is_resolved")
+  
+  // Ethiopian Calendar fields for display
+  ecStartDate     String?  @map("ec_start_date")
+  ecEndDate       String?  @map("ec_end_date")
+
+  @@map("audit")
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// --- IMMUTABLE AUDIT LOG (Proclamation 1321 Article 50) ---
+
+model AuditLog {
+  id              String   @id @default(uuid())
+  timestamp       DateTime @default(now())
+  actorId         String   @map("actor_id") // Fayda-linked staff ID
+  actionType      String   @map("action_type") // Read/Write/Delete
+  impactedResource String  @map("impacted_resource")
+  ipAddress       String?  @map("ip_address")
+  isHashed        Boolean  @default(true)
+  hashSignature   String?  @map("hash_signature") // SHA-256 hash for integrity
+
+  @@map("audit_log")
+}

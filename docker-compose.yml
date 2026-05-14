@@ -1,0 +1,124 @@
+# Addis Profit Finder - Local Development Environment
+# Compliant with Data Protection Proclamation 1321/2024
+# All data resides on local Fedora Linux server within Ethiopia
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database - Local Sovereign Data Store
+  postgres:
+    image: postgres:16-alpine
+    container_name: addis_profit_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-addis_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_this_password_in_production}
+      POSTGRES_DB: ${DB_NAME:-addis_profit_finder}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./apps/api/prisma:/docker-entrypoint-initdb.d/init
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - addis_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-addis_admin} -d ${DB_NAME:-addis_profit_finder}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Encryption at rest configuration
+    command: >
+      postgres
+      -c ssl=on
+      -c ssl_cert_file=/etc/ssl/certs/server.crt
+      -c ssl_key_file=/etc/ssl/private/server.key
+      -c log_statement=all
+
+  # Node.js API Backend
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: addis_profit_api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${DB_USER:-addis_admin}:${DB_PASSWORD:-change_this_password_in_production}@postgres:5432/${DB_NAME:-addis_profit_finder}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-change_this_jwt_secret_in_production}
+      FAYDA_CLIENT_ID: ${FAYDA_CLIENT_ID:-}
+      FAYDA_CLIENT_SECRET: ${FAYDA_CLIENT_SECRET:-}
+      FAYDA_REDIRECT_URI: ${FAYDA_REDIRECT_URI:-http://localhost:3000/auth/fayda/callback}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-change_this_encryption_key_in_production}
+    volumes:
+      - ./apps/api:/app
+      - /app/node_modules
+      - uploads_data:/app/uploads
+    ports:
+      - "${API_PORT:-4000}:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - addis_network
+    command: npm run dev
+
+  # React/Vite Frontend PWA
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: addis_profit_web
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:${API_PORT:-4000}
+      VITE_APP_NAME: Addis Profit Finder
+      VITE_DEFAULT_LANG: am
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/dist
+    ports:
+      - "${WEB_PORT:-3000}:5173"
+    depends_on:
+      - api
+    networks:
+      - addis_network
+    command: npm run dev -- --host 0.0.0.0
+
+  # Python AI Microservice (Optional - for advanced OCR/Fuzzy matching)
+  ai-engine:
+    build:
+      context: .
+      dockerfile: ai-engine/Dockerfile
+    container_name: addis_profit_ai
+    restart: unless-stopped
+    environment:
+      PYTHONUNBUFFERED: 1
+      MODEL_PATH: /app/models
+    volumes:
+      - ./ai-engine:/app
+      - ai_models_data:/app/models
+    ports:
+      - "${AI_PORT:-8000}:8000"
+    depends_on:
+      - api
+    networks:
+      - addis_network
+    profiles:
+      - ai  # Run with: docker-compose --profile ai up
+
+volumes:
+  postgres_data:
+    driver: local
+    name: addis_profit_postgres_data
+  uploads_data:
+    driver: local
+    name: addis_profit_uploads
+  ai_models_data:
+    driver: local
+    name: addis_profit_ai_models
+
+networks:
+  addis_network:
+    driver: bridge
+    name: addis_profit_network
